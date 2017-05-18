@@ -2,7 +2,6 @@ package com.mikewong.tool.tesseract.fragment;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -22,7 +21,7 @@ public class MainFragment extends Fragment {
 //    private static Button btnCamera;
 //    private static Button btnSelect;
 //    private static CheckBox chPreTreat;
-//    private static RadioGroup radioGroup;
+//    private static RadioGroup choice_lang;
 //    private static String textResult;
 //    private static Bitmap bitmapSelected;
 //    private static Bitmap bitmapTreated;
@@ -55,7 +54,6 @@ public class MainFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final Context context = container.getContext();
         final Resources res = context.getResources();
-        final SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         final View root = inflater.inflate(R.layout.fragment_main, container, false);
         // 若檔夾不存在 首先創建檔夾
 //        File path = new File(IMG_PATH);
@@ -69,7 +67,7 @@ public class MainFragment extends Fragment {
 //        btnCamera = (Button) findViewById(R.id.btn_camera);
 //        btnSelect = (Button) findViewById(R.id.btn_select);
 //        chPreTreat = (CheckBox) findViewById(R.id.ch_pretreat);
-//        radioGroup = (RadioGroup) findViewById(R.id.radiogroup);
+//        choice_lang = (RadioGroup) findViewById(R.id.choice_lang);
 //
 //        btnCamera.setOnClickListener(new cameraButtonListener());
 //        btnSelect.setOnClickListener(new selectButtonListener());
