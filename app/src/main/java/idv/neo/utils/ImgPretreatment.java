@@ -1,4 +1,4 @@
-package com.mikewong.tool.tesseract;
+package idv.neo.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
