@@ -3,4 +3,8 @@
         <item>中</item>
         <item>英</item>
     </string-array>
+    <string-array name="lang_file_array">
+        <item>chi_sim</item>
+        <item>eng</item>
+    </string-array>
 </resources>
