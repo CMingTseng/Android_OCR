@@ -1,189 +1,207 @@
 package com.mikewong.tool.tesseract.fragment;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 
+import com.googlecode.tesseract.android.TessBaseAPI;
 import com.mikewong.tool.tesseract.R;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+
+import idv.neo.utils.BitmapUtils;
+import idv.neo.utils.FolderFileUtils;
+
+import static com.mikewong.tool.tesseract.C.PHOTO_CAPTURE;
+import static com.mikewong.tool.tesseract.C.PHOTO_RESULT;
+import static com.mikewong.tool.tesseract.C.SHOWRESULT;
+import static com.mikewong.tool.tesseract.C.SHOWTREATEDIMG;
+import static idv.neo.utils.FolderFileUtils.getSDPath;
 
 public class MainFragment extends Fragment {
     private static final String TAG = MainFragment.class.getSimpleName();
-//    private static String LANGUAGE = "eng";
-//    private static String IMG_PATH = getSDPath() + File.separator + "ocrtest";
-//
-//    private static TextView tvResult;
-//    private static ImageView ivSelected;
-//    private static ImageView ivTreated;
-//    private static Button btnCamera;
-//    private static Button btnSelect;
-//    private static CheckBox chPreTreat;
-//    private static RadioGroup choice_lang;
-//    private static String textResult;
-//    private static Bitmap bitmapSelected;
-//    private static Bitmap bitmapTreated;
-//    private static final int SHOWRESULT = 0x101;
-//    private static final int SHOWTREATEDIMG = 0x102;
+    private static String LANGUAGE = "eng";
+    private static String IMG_PATH = getSDPath() + File.separator + "ocrtest";
+
+    private static TextView mResult;
+    private static ImageView mSelectImage;
+    private static ImageView ivTreated;
+
+    private static CheckBox chPreTreat;
+
+    private static String textResult;
+    private static Bitmap bitmapSelected;
+    private static Bitmap bitmapTreated;
+
 
     // 該handler用於處理修改結果的任務
-//    public static Handler myHandler = new Handler() {
-//
-//        @Override
-//        public void handleMessage(Message msg) {
-//            switch (msg.what) {
-//                case SHOWRESULT:
-//                    if (textResult.equals(""))
-//                        tvResult.setText("識別失敗");
-//                    else
-//                        tvResult.setText(textResult);
-//                    break;
-//                case SHOWTREATEDIMG:
-//                    tvResult.setText("識別中......");
-//                    showPicture(ivTreated, bitmapTreated);
-//                    break;
-//            }
-//            super.handleMessage(msg);
-//        }
-//
-//    };
+    public Handler mHandler = new Handler() {
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case SHOWRESULT:
+                    if (textResult.equals(""))
+                        mResult.setText("識別失敗");
+                    else
+                        mResult.setText(textResult);
+                    break;
+                case SHOWTREATEDIMG:
+                    mResult.setText("識別中......");
+                    showPicture(ivTreated, bitmapTreated);
+                    break;
+            }
+            super.handleMessage(msg);
+        }
+
+    };
+
+    @Override
+    public void onAttach(final Context context) {
+        super.onAttach(context);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (FolderFileUtils.checkSDCardExist()) {
+                    if (!FolderFileUtils.checkTesseractOCRFolderExist()) {
+                        FolderFileUtils.createTesseractOCRFolder();
+                    }
+                    final ArrayList<File> folders = FolderFileUtils.getExternalStorageDirectorys(new ArrayList<File>());
+                    File target = null;
+                    for (File folder : folders) {
+                        if (FolderFileUtils.isTesseractOCRFolder(folder)) {
+                            target = folder;
+                            break;
+                        }
+                    }
+                    final AssetManager am = context.getAssets();
+                    final String[] files = FolderFileUtils.getAssetsFilterFiles(am, new FolderFileUtils.TesseractOCRTrainedDataFilter());
+                    if (files != null) {
+                        for (String filename : files) {
+                            final File outFile = new File(target.toString() + File.separator + filename);
+                            if (!outFile.exists()) {
+                                InputStream in = null;
+                                OutputStream out = null;
+                                try {
+                                    in = am.open(filename);
+                                    out = new FileOutputStream(outFile);
+                                    FolderFileUtils.writeFile(in, out);
+                                } catch (IOException e) {
+                                    Log.e(TAG, "Failed to copy asset file: " + filename, e);
+                                } finally {
+                                    if (in != null) {
+                                        try {
+                                            in.close();
+                                        } catch (IOException e) {
+                                            // NOOP
+                                        }
+                                    }
+                                    if (out != null) {
+                                        try {
+                                            out.flush();
+                                            out.close();
+                                        } catch (IOException e) {
+                                            // NOOP
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // 若檔夾不存在 首先創建檔夾
+                final File path = new File(IMG_PATH);
+                if (!path.exists()) {
+                    path.mkdirs();
+                }
+            }
+        }).start();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final Context context = container.getContext();
         final Resources res = context.getResources();
         final View root = inflater.inflate(R.layout.fragment_main, container, false);
-        // 若檔夾不存在 首先創建檔夾
-//        File path = new File(IMG_PATH);
-//        if (!path.exists()) {
-//            path.mkdirs();
-//        }
-//
-//        tvResult = (TextView) findViewById(R.id.tv_result);
-//        ivSelected = (ImageView) findViewById(R.id.iv_selected);
-//        ivTreated = (ImageView) findViewById(R.id.iv_treated);
-//        btnCamera = (Button) findViewById(R.id.btn_camera);
-//        btnSelect = (Button) findViewById(R.id.btn_select);
-//        chPreTreat = (CheckBox) findViewById(R.id.ch_pretreat);
-//        choice_lang = (RadioGroup) findViewById(R.id.choice_lang);
-//
-//        btnCamera.setOnClickListener(new cameraButtonListener());
-//        btnSelect.setOnClickListener(new selectButtonListener());
-//
-//        // 用於設置解析語言
-//        radioGroup.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-//
-//            @Override
-//            public void onCheckedChanged(RadioGroup group, int checkedId) {
-//                switch (checkedId) {
-//                    case R.id.rb_en:
-//                        LANGUAGE = "eng";
-//                        break;
-//                    case R.id.rb_ch:
-//                        LANGUAGE = "chi_sim";
-//                        break;
-//                }
-//            }
-//
-//        });
+        mResult = (TextView) root.findViewById(R.id.tv_result);
+        mSelectImage = (ImageView) root.findViewById(R.id.iv_selected);
+        ivTreated = (ImageView) root.findViewById(R.id.iv_treated);
+        Button camera = (Button) root.findViewById(R.id.btn_camera);
+        camera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//                intent.putExtra(MediaStore.EXTRA_OUTPUT,Uri.fromFile(new File(IMG_PATH, "temp.jpg")));
+                startActivityForResult(intent, PHOTO_CAPTURE);
+            }
+        });
+        Button select = (Button) root.findViewById(R.id.btn_select);
+        select.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
+                intent.putExtra("crop", "true");
+                intent.putExtra("scale", true);
+                intent.putExtra("return-data", false);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(IMG_PATH, "temp_cropped.jpg")));
+                intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
+                intent.putExtra("noFaceDetection", true); // no face detection
+                startActivityForResult(intent, PHOTO_RESULT);
+            }
+        });
+        chPreTreat = (CheckBox) root.findViewById(R.id.ch_pretreat);
+        RadioGroup choice_lang = (RadioGroup) root.findViewById(R.id.choice_lang);
+        // 用於設置解析語言
+        choice_lang.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                switch (checkedId) {
+                    case R.id.en:
+                        LANGUAGE = "eng";
+                        break;
+                    case R.id.ch:
+                        LANGUAGE = "chi_sim";
+                        break;
+                }
+            }
+
+        });
         return root;
     }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//
-//        if (resultCode == Activity.RESULT_CANCELED)
-//            return;
-//
-//        if (requestCode == PHOTO_CAPTURE) {
-//            tvResult.setText("abc");
-//            startPhotoCrop(Uri.fromFile(new File(IMG_PATH, "temp.jpg")));
-//        }
-//
-//        // 處理結果
-//        if (requestCode == PHOTO_RESULT) {
-//            bitmapSelected = decodeUriAsBitmap(Uri.fromFile(new File(IMG_PATH,
-//                    "temp_cropped.jpg")));
-//            if (chPreTreat.isChecked())
-//                tvResult.setText("預處理中......");
-//            else
-//                tvResult.setText("識別中......");
-//            // 顯示選擇的圖片
-//            showPicture(ivSelected, bitmapSelected);
-//
-//            // 新線程來處理識別
-//            new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    if (chPreTreat.isChecked()) {
-//                        bitmapTreated = ImgPretreatment
-//                                .doPretreatment(bitmapSelected);
-//                        Message msg = new Message();
-//                        msg.what = SHOWTREATEDIMG;
-//                        myHandler.sendMessage(msg);
-//                        textResult = doOcr(bitmapTreated, LANGUAGE);
-//                    } else {
-//                        bitmapTreated = ImgPretreatment
-//                                .converyToGrayImg(bitmapSelected);
-//                        Message msg = new Message();
-//                        msg.what = SHOWTREATEDIMG;
-//                        myHandler.sendMessage(msg);
-//                        textResult = doOcr(bitmapTreated, LANGUAGE);
-//                    }
-//                    Message msg2 = new Message();
-//                    msg2.what = SHOWRESULT;
-//                    myHandler.sendMessage(msg2);
-//                }
-//
-//            }).start();
-//
-//        }
-//
-//        super.onActivityResult(requestCode, resultCode, data);
-//    }
-//
-//    // 拍照識別
-//    class cameraButtonListener implements OnClickListener {
-//
-//        @Override
-//        public void onClick(View arg0) {
-//            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//            intent.putExtra(MediaStore.EXTRA_OUTPUT,
-//                    Uri.fromFile(new File(IMG_PATH, "temp.jpg")));
-//            startActivityForResult(intent, PHOTO_CAPTURE);
-//        }
-//    }
-//
-//    ;
-//
-//    // 從相冊選取照片並裁剪
-//    class selectButtonListener implements OnClickListener {
-//
-//        @Override
-//        public void onClick(View v) {
-//            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-//            intent.addCategory(Intent.CATEGORY_OPENABLE);
-//            intent.setType("image/*");
-//            intent.putExtra("crop", "true");
-//            intent.putExtra("scale", true);
-//            intent.putExtra("return-data", false);
-//            intent.putExtra(MediaStore.EXTRA_OUTPUT,
-//                    Uri.fromFile(new File(IMG_PATH, "temp_cropped.jpg")));
-//            intent.putExtra("outputFormat",
-//                    Bitmap.CompressFormat.JPEG.toString());
-//            intent.putExtra("noFaceDetection", true); // no face detection
-//            startActivityForResult(intent, PHOTO_RESULT);
-//        }
-//
-//    }
-//
 //    // 將圖片顯示在view中
-//    public static void showPicture(ImageView iv, Bitmap bmp) {
-//        iv.setImageBitmap(bmp);
-//    }
-//
+private void showPicture(ImageView iv, Bitmap bmp) {
+    iv.setImageBitmap(bmp);
+}
+
 //    /**
 //     * 進行圖片識別
 //     *
@@ -191,69 +209,93 @@ public class MainFragment extends Fragment {
 //     * @param language 識別語言
 //     * @return 識別結果字串
 //     */
-//    public String doOcr(Bitmap bitmap, String language) {
-//        TessBaseAPI baseApi = new TessBaseAPI();
-//
-//        baseApi.init(getSDPath(), language);
-//
-//        // 必須加此行，tess-two要求BMP必須為此配置
-//        bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-//
-//        baseApi.setImage(bitmap);
-//
-//        String text = baseApi.getUTF8Text();
-//
-//        baseApi.clear();
-//        baseApi.end();
-//
-//        return text;
-//    }
-//
-//    /**
-//     * 獲取sd卡的路徑
-//     *
-//     * @return 路徑的字串
-//     */
-//    public static String getSDPath() {
-//        File sdDir = null;
-//        boolean sdCardExist = Environment.getExternalStorageState().equals(
-//                Environment.MEDIA_MOUNTED); // 判斷sd卡是否存在
-//        if (sdCardExist) {
-//            sdDir = Environment.getExternalStorageDirectory();// 獲取外存目錄
-//        }
-//        return sdDir.toString();
-//    }
-//
+public String doOcr(Bitmap bitmap, String language) {
+    TessBaseAPI baseApi = new TessBaseAPI();
+    baseApi.init(getSDPath(), language);
+    // 必須加此行，tess-two要求BMP必須為此配置
+    bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+    baseApi.setImage(bitmap);
+    String text = baseApi.getUTF8Text();
+    baseApi.clear();
+    baseApi.end();
+    return text;
+}
+
 //    /**
 //     * 調用系統圖片編輯進行裁剪
 //     */
-//    public void startPhotoCrop(Uri uri) {
-//        Intent intent = new Intent("com.android.camera.action.CROP");
-//        intent.setDataAndType(uri, "image/*");
-//        intent.putExtra("crop", "true");
-//        intent.putExtra("scale", true);
-//        intent.putExtra(MediaStore.EXTRA_OUTPUT,
-//                Uri.fromFile(new File(IMG_PATH, "temp_cropped.jpg")));
-//        intent.putExtra("return-data", false);
-//        intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
-//        intent.putExtra("noFaceDetection", true); // no face detection
-//        startActivityForResult(intent, PHOTO_RESULT);
-//    }
-//
+public void startPhotoCrop(Uri uri) {
+    Intent intent = new Intent("com.android.camera.action.CROP");
+    intent.setDataAndType(uri, "image/*");
+    intent.putExtra("crop", "true");
+    intent.putExtra("scale", true);
+    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(IMG_PATH, "temp_cropped.jpg")));
+    intent.putExtra("return-data", false);
+    intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
+    intent.putExtra("noFaceDetection", true); // no face detection
+    startActivityForResult(intent, PHOTO_RESULT);
+}
+
 //    /**
 //     * 根據URI獲取點陣圖
 //     *
 //     * @return 對應的點陣圖
 //     */
-//    private Bitmap decodeUriAsBitmap(Uri uri) {
-//        Bitmap bitmap = null;
-//        try {
-//            bitmap = BitmapFactory.decodeStream(getContentResolver()
-//                    .openInputStream(uri));
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//            return null;
-//        }
-//        return bitmap;
-//    }
+private Bitmap decodeUriAsBitmap(Uri uri) {
+    Bitmap bitmap = null;
+    try {
+        bitmap = BitmapFactory.decodeStream(getContext().getContentResolver().openInputStream(uri));
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+        return null;
+    }
+    return bitmap;
+}
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_CANCELED)
+            return;
+        if (requestCode == PHOTO_CAPTURE) {
+            mResult.setText("abc");
+            startPhotoCrop(Uri.fromFile(new File(IMG_PATH, "temp.jpg")));
+        }
+        // 處理結果
+        if (requestCode == PHOTO_RESULT) {
+            bitmapSelected = decodeUriAsBitmap(Uri.fromFile(new File(IMG_PATH, "temp_cropped.jpg")));
+            if (chPreTreat.isChecked())
+                mResult.setText("預處理中......");
+            else
+                mResult.setText("識別中......");
+            // 顯示選擇的圖片
+            showPicture(mSelectImage, bitmapSelected);
+
+            // 新線程來處理識別
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (chPreTreat.isChecked()) {
+                        bitmapTreated = BitmapUtils
+                                .doPretreatment(bitmapSelected);
+                        Message msg = new Message();
+                        msg.what = SHOWTREATEDIMG;
+                        mHandler.sendMessage(msg);
+                        textResult = doOcr(bitmapTreated, LANGUAGE);
+                    } else {
+                        bitmapTreated = BitmapUtils
+                                .converyToGrayImg(bitmapSelected);
+                        Message msg = new Message();
+                        msg.what = SHOWTREATEDIMG;
+                        mHandler.sendMessage(msg);
+                        textResult = doOcr(bitmapTreated, LANGUAGE);
+                    }
+                    Message msg2 = new Message();
+                    msg2.what = SHOWRESULT;
+                    mHandler.sendMessage(msg2);
+                }
+
+            }).start();
+        }
+    }
 }
