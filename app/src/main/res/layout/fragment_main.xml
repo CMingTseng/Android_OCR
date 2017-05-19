@@ -41,7 +41,7 @@
             android:layout_height="50dp"
             android:layout_alignParentRight="true"
             android:layout_margin="2dp"
-            android:text="拍照" />
+            android:text="@string/camera" />
 
         <Button
             android:id="@+id/btn_select"
@@ -49,7 +49,7 @@
             android:layout_height="50dp"
             android:layout_margin="2dp"
             android:layout_toLeftOf="@id/btn_camera"
-            android:text="相冊選取" />
+            android:text="@string/albums" />
     </RelativeLayout>
 
     <ScrollView
@@ -67,18 +67,18 @@
                 android:id="@+id/ch_pretreat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="二值化處理" />
+                android:text="@string/two_way" />
 
             <TextView
                 android:id="@+id/tv_result"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:text="result" />
+                android:text="@string/result" />
 
             <TextView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:text="選取的圖片：" />
+                android:text="@string/select" />
 
             <ImageView
                 android:id="@+id/iv_selected"
@@ -90,7 +90,8 @@
             <TextView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:text="預處理後的圖片：" />
+                android:text="@string/processimage" />
+
 
             <ImageView
                 android:id="@+id/iv_treated"
