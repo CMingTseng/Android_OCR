@@ -94,7 +94,7 @@ public class MainFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(IMG_PATH, BuildConfig.OCRIMAGEFILENAME)));
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(IMG_PATH, BuildConfig.CAMERAFILE)));
                 startActivityForResult(intent, PHOTO_CAPTURE);
             }
         });
@@ -198,7 +198,7 @@ public class MainFragment extends Fragment {
             return;
         if (requestCode == PHOTO_CAPTURE) {
             mResult.setText("abc");
-            startPhotoCrop(Uri.fromFile(new File(IMG_PATH, BuildConfig.OCRIMAGEFILENAME)));
+            startPhotoCrop(Uri.fromFile(new File(IMG_PATH, BuildConfig.CAMERAFILE)));
         }
         // 處理結果
         if (requestCode == PHOTO_RESULT) {
