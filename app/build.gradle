@@ -9,6 +9,8 @@ android {
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
+        buildConfigField 'String', 'OCRIMAGEFOLDERNAME', '"ocrtest"'
+        buildConfigField 'String', 'OCRIMAGEFILENAME', '"temp_cropped.jpg"'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
