@@ -18,21 +18,6 @@
             android:layout_height="50dp"
             android:layout_alignParentLeft="true"
             android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/en"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:checked="true"
-                android:text="英" />
-
-            <RadioButton
-                android:id="@+id/ch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="中" />
         </RadioGroup>
 
         <Button
