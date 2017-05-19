@@ -1,0 +1,6 @@
+<resources>
+    <string-array name="lang_array">
+        <item>中</item>
+        <item>英</item>
+    </string-array>
+</resources>
