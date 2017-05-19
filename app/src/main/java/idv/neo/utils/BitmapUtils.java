@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Color;
 
-public class ImgPretreatment {
+public class BitmapUtils {
 
 	private static Bitmap img;
 	private static int imgWidth;
